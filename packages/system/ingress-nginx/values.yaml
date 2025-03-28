@@ -20,6 +20,13 @@ ingress-nginx:
       args:
       - --server.telemetry-address=0.0.0.0:9090
       - --server.exporter-address=0.0.0.0:9091
+      resources:
+        limits:
+          cpu: 100m
+          memory: 90Mi
+        requests:
+          cpu: 100m
+          memory: 90Mi
     service:
       #type: NodePort # ClusterIP
       externalTrafficPolicy: "Local"
@@ -40,7 +47,13 @@ ingress-nginx:
       upstream-keepalive-timeout: "60"
       upstream-keepalive-connections: "320"
       ssl-session-tickets: "true"
-
+    resources:
+      limits:
+        cpu: "1"
+        memory: 2048Mi
+      requests:
+        cpu: 100m
+        memory: 90Mi
 
   defaultBackend:
     ##
@@ -52,3 +65,4 @@ ingress-nginx:
       requests:
         cpu: 10m
         memory: 20Mi
+
