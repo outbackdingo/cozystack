@@ -4,9 +4,9 @@ ingress-nginx:
       enable-ssl-passthrough: ""
     image:
       registry: ghcr.io
-      image: kvaps/ingress-nginx-with-protobuf-exporter/controller
+      image: cozystack/ingress-nginx-with-protobuf-exporter/controller
       tag: v1.11.2
-      digest: sha256:e80856ece4e30e9646d65c8d92c25a3446a0bba1c2468cd026f17df9e60d2c0f
+      digest: sha256:beba8869ee370599e1f26557a9669ebdc9481c07b34059f348eb3e17b647e7e0
     allowSnippetAnnotations: true
     replicaCount: 2
     admissionWebhooks:
@@ -16,10 +16,17 @@ ingress-nginx:
       enabled: true
     extraContainers:
     - name: protobuf-exporter
-      image: ghcr.io/kvaps/ingress-nginx-with-protobuf-exporter/protobuf-exporter:v1.11.2@sha256:25ed6a5f508bbc59134ad786f1e765d1c2187742075a4e828d68ef3f07a78e52
+      image: ghcr.io/kvaps/ingress-nginx-with-protobuf-exporter/protobuf-exporter:v1.11.2@sha256:6d9235a9ee6f2be1921db4687afbdcd85d145b087dd916b5a96455bdb5cff560
       args:
       - --server.telemetry-address=0.0.0.0:9090
       - --server.exporter-address=0.0.0.0:9091
+      resources:
+        limits:
+          cpu: 100m
+          memory: 90Mi
+        requests:
+          cpu: 100m
+          memory: 90Mi
     service:
       #type: NodePort # ClusterIP
       externalTrafficPolicy: "Local"
@@ -40,8 +47,22 @@ ingress-nginx:
       upstream-keepalive-timeout: "60"
       upstream-keepalive-connections: "320"
       ssl-session-tickets: "true"
-
+    resources:
+      limits:
+        cpu: "1"
+        memory: 2048Mi
+      requests:
+        cpu: 100m
+        memory: 90Mi
 
   defaultBackend:
     ##
     enabled: true
+    resources:
+      limits:
+        cpu: 10m
+        memory: 20Mi
+      requests:
+        cpu: 10m
+        memory: 20Mi
+
