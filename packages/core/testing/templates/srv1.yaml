@@ -1,0 +1,36 @@
+apiVersion: apps.cozystack.io/v1alpha1
+kind: VMInstance
+metadata:
+  name: srv1
+  namespace: tenant-testing
+spec:
+  instanceProfile: ubuntu
+  instanceType: u1.xlarge
+  running: true
+  disks:
+  - name: srv1-system
+  - name: srv1-data
+---
+apiVersion: apps.cozystack.io/v1alpha1
+kind: VMDisk
+metadata:
+  name: srv1-system
+  namespace: tenant-testing
+spec:
+  optical: false
+  source:
+    http:
+      url: https://github.com/cozystack/cozystack/releases/download/v0.28.2/nocloud-amd64.raw.xz
+  storage: 10Gi
+  storageClass: local
+---
+apiVersion: apps.cozystack.io/v1alpha1
+kind: VMDisk
+metadata:
+  name: srv1-data
+  namespace: tenant-testing
+spec:
+  optical: false
+  source: {}
+  storage: 100Gi
+  storageClass: local

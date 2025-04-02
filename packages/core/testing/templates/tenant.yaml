@@ -1,0 +1,5 @@
+apiVersion: apps.cozystack.io/v1alpha1
+kind: Tenant
+metadata:
+  name: testing
+  namespace: tenant-root
