@@ -9,7 +9,7 @@ on:
       - '**.md'
 jobs:
   pre-commit:
-    runs-on: ubuntu-22.04
+    runs-on: [self-hosted]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -18,21 +18,6 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
-
-      - name: Install pre-commit
-        run: pip install pre-commit
-
-      - name: Install generate
-        run: |
-          sudo apt update
-          sudo apt install curl -y
-          curl -fsSL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-          sudo apt install nodejs -y
-          git clone https://github.com/bitnami/readme-generator-for-helm
-          cd ./readme-generator-for-helm
-          npm install
-          npm install -g pkg
-          pkg . -o /usr/local/bin/readme-generator
 
       - name: Run pre-commit hooks
         run: |
