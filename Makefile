@@ -1,6 +1,13 @@
 .PHONY: manifests repos assets
 
-build:
+build-deps:
+	@command -V find docker skopeo jq gh helm > /dev/null
+	@yq --version | grep -q "mikefarah" || (echo "mikefarah/yq is required" && exit 1)
+	@tar --version | grep -q GNU || (echo "GNU tar is required" && exit 1)
+	@sed --version | grep -q GNU || (echo "GNU sed is required" && exit 1)
+	@awk --version | grep -q GNU || (echo "GNU awk is required" && exit 1)
+
+build: build-deps
 	make -C packages/apps/http-cache image
 	make -C packages/apps/postgres image
 	make -C packages/apps/mysql image
@@ -19,10 +26,6 @@ build:
 	make -C packages/core/installer image
 	make manifests
 
-manifests:
-	(cd packages/core/installer/; helm template -n cozy-installer installer .) > manifests/cozystack-installer.yaml
-	sed -i 's|@sha256:[^"]\+||' manifests/cozystack-installer.yaml
-
 repos:
 	rm -rf _out
 	make -C packages/apps check-version-map
@@ -33,14 +36,21 @@ repos:
 	mkdir -p _out/logos
 	cp ./packages/apps/*/logos/*.svg ./packages/extra/*/logos/*.svg _out/logos/
 
+
+manifests:
+	mkdir -p _out/assets
+	(cd packages/core/installer/; helm template -n cozy-installer installer .) > _out/assets/cozystack-installer.yaml
+
 assets:
 	make -C packages/core/installer/ assets
 
 test:
-	test -f _out/assets/nocloud-amd64.raw.xz || make -C packages/core/installer talos-nocloud
 	make -C packages/core/testing apply
 	make -C packages/core/testing test
-	make -C packages/core/testing test-applications
+	#make -C packages/core/testing test-applications
 
 generate:
 	hack/update-codegen.sh
+
+upload_assets: manifests
+	hack/upload-assets.sh

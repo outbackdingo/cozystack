@@ -34,6 +34,13 @@ releases:
   - values-talos.yaml
   - values-kubeovn.yaml
 
+- name: cilium-networkpolicy
+  releaseName: cilium-networkpolicy
+  chart: cozy-cilium-networkpolicy
+  namespace: cozy-cilium
+  privileged: true
+  dependsOn: [cilium]
+
 - name: kubeovn
   releaseName: kubeovn
   chart: cozy-kubeovn
@@ -109,7 +116,7 @@ releases:
   chart: cozy-monitoring-agents
   namespace: cozy-monitoring
   privileged: true
-  dependsOn: [cilium,kubeovn,victoria-metrics-operator]
+  dependsOn: [victoria-metrics-operator, vertical-pod-autoscaler-crds]
   values:
     scrapeRules:
       etcd:
@@ -146,6 +153,17 @@ releases:
   namespace: cozy-kubevirt-cdi
   dependsOn: [cilium,kubeovn,kubevirt-cdi-operator]
 
+- name: gpu-operator
+  releaseName: gpu-operator
+  chart: cozy-gpu-operator
+  namespace: cozy-gpu-operator
+  privileged: true
+  optional: true
+  dependsOn: [cilium,kubeovn]
+  valuesFiles:
+  - values.yaml
+  - values-talos.yaml
+
 - name: metallb
   releaseName: metallb
   chart: cozy-metallb
@@ -181,13 +199,13 @@ releases:
   releaseName: kafka-operator
   chart: cozy-kafka-operator
   namespace: cozy-kafka-operator
-  dependsOn: [cilium,kubeovn]
+  dependsOn: [cilium,kubeovn,victoria-metrics-operator]
 
 - name: clickhouse-operator
   releaseName: clickhouse-operator
   chart: cozy-clickhouse-operator
   namespace: cozy-clickhouse-operator
-  dependsOn: [cilium,kubeovn]
+  dependsOn: [cilium,kubeovn,victoria-metrics-operator]
 
 - name: rabbitmq-operator
   releaseName: rabbitmq-operator
@@ -380,3 +398,15 @@ releases:
   namespace: cozy-vertical-pod-autoscaler
   privileged: true
   dependsOn: [monitoring-agents]
+
+- name: vertical-pod-autoscaler-crds
+  releaseName: vertical-pod-autoscaler-crds
+  chart: cozy-vertical-pod-autoscaler-crds
+  namespace: cozy-vertical-pod-autoscaler
+  privileged: true
+  dependsOn: [cilium, kubeovn]
+
+- name: reloader
+  releaseName: reloader
+  chart: cozy-reloader
+  namespace: cozy-reloader
