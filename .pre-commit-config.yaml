@@ -3,7 +3,7 @@ repos:
   hooks:
     - id: gen-versions-map
       name: Generate versions map and check for changes
-      entry: sh -c 'make -C packages/apps check-version-map && make -C packages/extra check-version-map'
+      entry: sh -c 'set -x && make -C packages/apps check-version-map && make -C packages/extra check-version-map'
       language: system
       types: [file]
       pass_filenames: false
