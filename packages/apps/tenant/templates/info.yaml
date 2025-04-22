@@ -24,4 +24,10 @@ spec:
       version: "*"
   interval: 1m0s
   timeout: 5m0s
+  valuesFrom:
+  - kind: ConfigMap
+    name: cozy-tenant-configuration-hash
+    optional: true
+    targetPath: cozyTenantConfigurationHash
+    valuesKey: cozyTenantConfigurationHash
 {{- end }}

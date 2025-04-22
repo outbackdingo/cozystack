@@ -51,3 +51,9 @@ spec:
           server-snippet: "real_ip_header CF-Connecting-IP;"
           {{- end }}
         {{- end }}
+  valuesFrom:
+  - kind: ConfigMap
+    name: cozy-tenant-configuration-hash
+    optional: true
+    targetPath: cozyTenantConfigurationHash
+    valuesKey: cozyTenantConfigurationHash

@@ -44,6 +44,10 @@ spec:
         resources: {}
       vmstorage:
         resources: {}
-    oncall:
-      enabled: false
+  valuesFrom:
+  - kind: ConfigMap
+    name: cozy-tenant-configuration-hash
+    optional: true
+    targetPath: cozyTenantConfigurationHash
+    valuesKey: cozyTenantConfigurationHash
 {{- end }}

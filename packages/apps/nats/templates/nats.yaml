@@ -95,3 +95,9 @@ spec:
           spec:
             type: LoadBalancer
       {{- end }}
+  valuesFrom:
+  - kind: ConfigMap
+    name: cozy-tenant-configuration-hash
+    optional: true
+    targetPath: cozyTenantConfigurationHash
+    valuesKey: cozyTenantConfigurationHash
