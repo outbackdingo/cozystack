@@ -60,5 +60,5 @@ metadata:
   name: hetzner
 spec:
   # https://github.com/syself/cluster-api-provider-hetzner
-  version: v1.0.1
+  version: v1.0.3
 {{- end }}
