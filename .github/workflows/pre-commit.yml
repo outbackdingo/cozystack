@@ -1,7 +1,7 @@
 name: Pre-Commit Checks
 
 on:
-  pull_request:
+  pull_request_target:
     types: [labeled, opened, synchronize, reopened]
     paths-ignore:
       - '**.md'
@@ -14,11 +14,13 @@ jobs:
   pre-commit:
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout code
+      - name: Checkout code (PR branch)
         uses: actions/checkout@v3
         with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref:        ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-          fetch-tags: true
+          fetch-tags:  true
 
       - name: Set up Python
         uses: actions/setup-python@v4

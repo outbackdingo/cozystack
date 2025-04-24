@@ -1,7 +1,7 @@
 name: Releasing PR
 
 on:
-  pull_request:
+  pull_request_target:
     types: [labeled, opened, synchronize, reopened, closed]
 
 concurrency:
@@ -22,11 +22,13 @@ jobs:
       github.event.action != 'closed'
 
     steps:
-      - name: Checkout code
+      - name: Checkout code (PR branch)
         uses: actions/checkout@v4
         with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref:        ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
-          fetch-tags: true
+          fetch-tags:  true
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -65,7 +67,7 @@ jobs:
             core.setOutput('tag', tag);
             console.log(`✅ Tag to publish: ${tag}`);
 
-      # Checkout repo & create / push annotated tag
+      # Checkout merged commit (default ref -> merge SHA)
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
