@@ -1,0 +1,29 @@
+{{- $cozyConfig := lookup "v1" "ConfigMap" "cozy-system" "cozystack" }}
+{{- $issuerType := (index $cozyConfig.data "clusterissuer") | default "http01" }}
+
+{{- $myNS := lookup "v1" "Namespace" "" .Release.Namespace }}
+{{- $host := index $myNS.metadata.annotations "namespace.cozystack.io/host" }}
+
+{{- if .Values.api }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
+  name: api-{{ .Release.Namespace }}
+  namespace: default
+spec:
+  ingressClassName: {{ .Release.Namespace }}
+  rules:
+  - host: api.{{ $host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: kubernetes
+            port:
+              number: 443
+        path: /
+        pathType: Prefix
+{{- end }}

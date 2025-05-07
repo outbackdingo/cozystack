@@ -33,3 +33,6 @@ cdiUploadProxy: false
 
 ## @param virtExportProxy Should ingress serve KubeVirt export proxy
 virtExportProxy: false
+
+## @param api Should ingress serve Cozystack API
+api: true

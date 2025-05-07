@@ -13,4 +13,5 @@
 | `dashboard`       | Should ingress serve Cozystack service dashboard                  | `false` |
 | `cdiUploadProxy`  | Should ingress serve CDI upload proxy                             | `false` |
 | `virtExportProxy` | Should ingress serve KubeVirt export proxy                        | `false` |
+| `api`             | Should ingress serve Cozystack API                                | `true`  |
 
