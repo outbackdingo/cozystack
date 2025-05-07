@@ -10,11 +10,7 @@ kind: Ingress
 metadata:
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: HTTPS
-    cert-manager.io/cluster-issuer: letsencrypt-prod
-    {{- if eq $issuerType "cloudflare" }} 
-    {{- else }}
-    acme.cert-manager.io/http01-ingress-class: {{ .Release.Namespace }}
-    {{- end }}
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
   name: cdi-uploadproxy-{{ .Release.Namespace }}
   namespace: cozy-kubevirt-cdi
 spec:
@@ -30,8 +26,4 @@ spec:
               number: 443
         path: /
         pathType: Prefix
-  tls:
-  - hosts:
-    - cdi-uploadproxy.{{ $host }}
-    secretName: cdi-uploadproxy-{{ .Release.Namespace }}-tls
 {{- end }}
