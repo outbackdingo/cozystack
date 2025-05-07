@@ -7,6 +7,9 @@
 
 {{/* collect dependency namespaces from releases */}}
 {{- range $x := $bundle.releases }}
+{{-   if or (has $x.name $disabledComponents) (and ($x.optional) (not (has $x.name $enabledComponents))) }}
+{{-     continue }}
+{{-   end }}
 {{-   $_ := set $dependencyNamespaces $x.name $x.namespace }}
 {{- end }}
 
@@ -86,7 +89,7 @@ spec:
   {{- with $x.dependsOn }}
   dependsOn:
   {{-   range $dep := . }}
-  {{-     if not (has $dep $disabledComponents) }}
+  {{-     if hasKey $dependencyNamespaces $dep }}
   - name: {{ $dep }}
     namespace: {{ index $dependencyNamespaces $dep }}
   {{-     end }}

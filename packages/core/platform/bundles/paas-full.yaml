@@ -321,12 +321,7 @@ releases:
     name: kubeapps-auth-config
     valuesKey: values.yaml
   {{- end }}
-
-  {{- if eq $oidcEnabled "true" }}
   dependsOn: [keycloak-configure]
-  {{- else }}
-  dependsOn: []
-  {{- end }}
 
 - name: kamaji
   releaseName: kamaji
