@@ -10,8 +10,9 @@ ingress-nginx:
     allowSnippetAnnotations: true
     replicaCount: 2
     admissionWebhooks:
+      enabled: true
       certManager:
-        enabled: true
+        enabled: false
     metrics:
       enabled: true
     extraContainers:
