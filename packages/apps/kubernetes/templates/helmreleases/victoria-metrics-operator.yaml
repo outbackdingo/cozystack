@@ -5,7 +5,7 @@ metadata:
   name: {{ .Release.Name }}-cozy-victoria-metrics-operator
   labels:
     cozystack.io/repository: system
-    coztstack.io/target-cluster-name: {{ .Release.Name }}
+    cozystack.io/target-cluster-name: {{ .Release.Name }}
 spec:
   interval: 5m
   releaseName: cozy-victoria-metrics-operator
@@ -17,6 +17,7 @@ spec:
         kind: HelmRepository
         name: cozystack-system
         namespace: cozy-system
+      version: '>= 0.0.0-0'
   kubeConfig:
     secretRef:
       name: {{ .Release.Name }}-admin-kubeconfig

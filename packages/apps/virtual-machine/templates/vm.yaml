@@ -27,10 +27,7 @@ spec:
   - metadata:
       name: {{ include "virtual-machine.fullname" . }}
     spec:
-      pvc:
-        volumeMode: Block
-        accessModes:
-        - ReadWriteMany
+      storage:
         resources:
           requests:
             storage: {{ .Values.systemDisk.storage | quote }}
@@ -74,7 +71,8 @@ spec:
           {{- if .Values.gpus }}
           gpus:
           {{- range $i, $gpu := .Values.gpus }}
-          - deviceName: {{ $gpu.name }}
+          - name: gpu{{ add $i 1 }}
+            deviceName: {{ $gpu.name }}
           {{- end }}
           {{- end }}
           disks:

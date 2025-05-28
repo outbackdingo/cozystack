@@ -55,6 +55,7 @@ spec:
         kind: HelmRepository
         name: cozystack-system
         namespace: cozy-system
+      version: '>= 0.0.0-0'
       {{- with $x.valuesFiles }}
       valuesFiles:
       {{- toYaml $x.valuesFiles | nindent 6 }}
@@ -69,17 +70,6 @@ spec:
   {{- with $values }}
   values:
     {{- toYaml . | nindent 4}}
-  {{- end }}
-
-  {{- if $x.valuesFrom }}
-  valuesFrom:
-  {{- range $source := $x.valuesFrom }}
-  - kind: {{ $source.kind }}
-    name: {{ $source.name }}
-    {{- if $source.valuesKey }}
-    valuesKey: {{ $source.valuesKey }}
-    {{- end }}
-  {{- end }}
   {{- end }}
 
   {{- with $x.dependsOn }}

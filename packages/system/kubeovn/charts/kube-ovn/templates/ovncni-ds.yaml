@@ -35,11 +35,7 @@ spec:
         command:
           - sh
           - -xec
-          - {{ if not .Values.DISABLE_MODULES_MANAGEMENT -}}
-            iptables -V
-            {{- else -}}
-            echo "nothing to do"
-            {{- end }}
+          - iptables -V
         securityContext:
           allowPrivilegeEscalation: true
           capabilities:
@@ -93,6 +89,9 @@ spec:
           - --node-switch={{ .Values.networking.NODE_SUBNET }}
           - --encap-checksum=true
           - --service-cluster-ip-range={{ index $cozyConfig.data "ipv4-svc-cidr" }}
+          {{- if .Values.global.logVerbosity }}
+          - --v={{ .Values.global.logVerbosity }}
+          {{- end }}
           {{- if eq .Values.networking.NETWORK_TYPE "vlan" }}
           - --iface=
           {{- else}}
@@ -125,9 +124,6 @@ spec:
               - NET_RAW
               - SYS_ADMIN
               - SYS_PTRACE
-              {{- if not .Values.DISABLE_MODULES_MANAGEMENT }}
-              - SYS_MODULE
-              {{- end }}
               - SYS_NICE
         env:
           - name: ENABLE_SSL
@@ -271,10 +267,10 @@ spec:
         {{- if .Values.cni_conf.MOUNT_LOCAL_BIN_DIR }}
         - name: local-bin
           hostPath:
-            path: {{ .Values.cni_conf.MOUNT_LOCAL_BIN_DIR }}
+            path: {{ .Values.cni_conf.LOCAL_BIN_DIR }}
         {{- end }}
         {{- if .Values.func.ENABLE_OVN_IPSEC }}
         - name: ovs-ipsec-keys
           hostPath:
-            path: /etc/origin/ovs_ipsec_keys
+            path: {{ .Values.OPENVSWITCH_DIR }}
         {{- end }}

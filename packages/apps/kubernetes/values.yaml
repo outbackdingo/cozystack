@@ -1,12 +1,10 @@
-## @section Common parameters
+## @section Common Parameters
 
-## @param host The hostname used to access the Kubernetes cluster externally (defaults to using the cluster name as a subdomain for the tenant host).
-## @param controlPlane.replicas Number of replicas for Kubernetes contorl-plane components
-## @param storageClass StorageClass used to store user data
+## @param host Hostname used to access the Kubernetes cluster externally. Defaults to `<cluster-name>.<tenant-host>` when empty.
+## @param controlPlane.replicas Number of replicas for Kubernetes control-plane components.
+## @param storageClass StorageClass used to store user data.
 ##
 host: ""
-controlPlane:
-  replicas: 2
 storageClass: replicated
 
 ## @param nodeGroups [object] nodeGroups configuration
@@ -24,6 +22,14 @@ nodeGroups:
       cpu: ""
       memory: ""
 
+    ## List of GPUs to attach (WARN: NVIDIA driver requires at least 4 GiB of RAM)
+    ## e.g:
+    ## instanceType: "u1.xlarge"
+    ## gpus:
+    ## - name: nvidia.com/AD102GL_L40S
+    gpus: []
+
+
 ## @section Cluster Addons
 ##
 addons:
@@ -31,19 +37,31 @@ addons:
   ## Cert-manager: automatically creates and manages SSL/TLS certificate
   ##
   certManager:
-    ## @param addons.certManager.enabled Enables the cert-manager
+    ## @param addons.certManager.enabled Enable cert-manager, which automatically creates and manages SSL/TLS certificates.
     ## @param addons.certManager.valuesOverride Custom values to override
     enabled: false
     valuesOverride: {}
 
+  ## Cilium CNI plugin
+  ##
+  cilium:
+    ## @param addons.cilium.valuesOverride Custom values to override
+    valuesOverride: {}
+
+  ## Gateway API
+  ##
+  gatewayAPI:
+    ## @param addons.gatewayAPI.enabled Enable the Gateway API
+    enabled: false
+
   ## Ingress-NGINX Controller
   ##
   ingressNginx:
-    ## @param addons.ingressNginx.enabled Enable Ingress-NGINX controller (expect nodes with 'ingress-nginx' role)
+    ## @param addons.ingressNginx.enabled Enable the Ingress-NGINX controller (requires nodes labeled with the 'ingress-nginx' role).
     ## @param addons.ingressNginx.valuesOverride Custom values to override
     ##
     enabled: false
-    ## @param addons.ingressNginx.hosts List of domain names that should be passed through to the cluster by upper cluster
+    ## @param addons.ingressNginx.hosts List of domain names that the parent cluster should route to this tenant cluster.
     ## e.g:
     ## hosts:
     ## - example.org
@@ -52,10 +70,18 @@ addons:
     hosts: []
     valuesOverride: {}
 
+  ## GPU-operator: NVIDIA GPU Operator
+  ##
+  gpuOperator:
+    ## @param addons.gpuOperator.enabled Enable the GPU-operator
+    ## @param addons.gpuOperator.valuesOverride Custom values to override
+    enabled: false
+    valuesOverride: {}
+
   ## Flux CD
   ##
   fluxcd:
-    ## @param addons.fluxcd.enabled Enables Flux CD
+    ## @param addons.fluxcd.enabled Enable FluxCD
     ## @param addons.fluxcd.valuesOverride Custom values to override
     ##
     enabled: false
@@ -64,7 +90,7 @@ addons:
   ## MonitoringAgents
   ##
   monitoringAgents:
-    ## @param addons.monitoringAgents.enabled Enables MonitoringAgents (fluentbit, vmagents for sending logs and metrics to storage) if tenant monitoring enabled, send to tenant storage, else to root storage
+    ## @param addons.monitoringAgents.enabled Enable monitoring agents (Fluent Bit and VMAgents) to send logs and metrics. If tenant monitoring is enabled, data is sent to tenant storage; otherwise, it goes to root storage.
     ## @param addons.monitoringAgents.valuesOverride Custom values to override
     ##
     enabled: false
@@ -77,62 +103,42 @@ addons:
     ##
     valuesOverride: {}
 
-## @section Kamaji control plane
+## @section Kubernetes Control Plane Configuration
 ##
-kamajiControlPlane:
+
+controlPlane:
+  replicas: 2
+
   apiServer:
-    ## @param kamajiControlPlane.apiServer.resources Resources
-    resources: {}
-    # resources:
-    #   limits:
-    #     cpu: 4000m
-    #     memory: 4Gi
-    #   requests:
-    #     cpu: 100m
-    #     memory: 512Mi
-    
-    ## @param kamajiControlPlane.apiServer.resourcesPreset Set container resources according to one common preset (allowed values: none, nano, micro, small, medium, large, xlarge, 2xlarge). This is ignored if resources is set (resources is recommended for production).
+    ## @param controlPlane.apiServer.resources Explicit CPU/memory resource requests and limits for the API server.
+    ## @param controlPlane.apiServer.resourcesPreset Use a common resources preset when `resources` is not set explicitly.
+    ## e.g:
+    ## resources:
+    ##   limits:
+    ##     cpu: 4000m
+    ##     memory: 4Gi
+    ##   requests:
+    ##     cpu: 100m
+    ##     memory: 512Mi
+    ##
     resourcesPreset: "small"
+    resources: {}
 
   controllerManager:
-    ## @param kamajiControlPlane.controllerManager.resources Resources
-    resources: {}
-    # resources:
-    #   limits:
-    #     cpu: 4000m
-    #     memory: 4Gi
-    #   requests:
-    #     cpu: 100m
-    #     memory: 512Mi
-    
-    ## @param kamajiControlPlane.controllerManager.resourcesPreset Set container resources according to one common preset (allowed values: none, nano, micro, small, medium, large, xlarge, 2xlarge). This is ignored if resources is set (resources is recommended for production).
+    ## @param controlPlane.controllerManager.resources Explicit CPU/memory resource requests and limits for the controller manager.
+    ## @param controlPlane.controllerManager.resourcesPreset Use a common resources preset when `resources` is not set explicitly.
     resourcesPreset: "micro"
+    resources: {}
+
   scheduler:
-    ## @param kamajiControlPlane.scheduler.resources Resources
-    resources: {}
-    # resources:
-    #   limits:
-    #     cpu: 4000m
-    #     memory: 4Gi
-    #   requests:
-    #     cpu: 100m
-    #     memory: 512Mi
-    
-    ## @param kamajiControlPlane.scheduler.resourcesPreset Set container resources according to one common preset (allowed values: none, nano, micro, small, medium, large, xlarge, 2xlarge). This is ignored if resources is set (resources is recommended for production).
+    ## @param controlPlane.scheduler.resources Explicit CPU/memory resource requests and limits for the scheduler.
+    ## @param controlPlane.scheduler.resourcesPreset Use a common resources preset when `resources` is not set explicitly.
     resourcesPreset: "micro"
-  addons:
-    konnectivity:
-      server:
-        ## @param kamajiControlPlane.addons.konnectivity.server.resources Resources
-        resources: {}
-        # resources:
-        #   limits:
-        #     cpu: 4000m
-        #     memory: 4Gi
-        #   requests:
-        #     cpu: 100m
-        #     memory: 512Mi
-        
-        ## @param kamajiControlPlane.addons.konnectivity.server.resourcesPreset Set container resources according to one common preset (allowed values: none, nano, micro, small, medium, large, xlarge, 2xlarge). This is ignored if resources is set (resources is recommended for production).
-        resourcesPreset: "micro"
-            
+    resources: {}
+
+  konnectivity:
+    server:
+      ## @param controlPlane.konnectivity.server.resources Explicit CPU/memory resource requests and limits for the Konnectivity.
+      ## @param controlPlane.konnectivity.server.resourcesPreset Use a common resources preset when `resources` is not set explicitly.
+      resourcesPreset: "micro"
+      resources: {}
