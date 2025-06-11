@@ -34,8 +34,9 @@ import (
 	"k8s.io/apiserver/pkg/endpoints/openapi"
 	genericapiserver "k8s.io/apiserver/pkg/server"
 	genericoptions "k8s.io/apiserver/pkg/server/options"
+	"k8s.io/apiserver/pkg/util/compatibility"
 	utilfeature "k8s.io/apiserver/pkg/util/feature"
-	utilversionpkg "k8s.io/apiserver/pkg/util/version"
+	basecompatibility "k8s.io/component-base/compatibility"
 	"k8s.io/component-base/featuregate"
 	baseversion "k8s.io/component-base/version"
 	"k8s.io/klog/v2"
@@ -45,7 +46,8 @@ import (
 
 // AppsServerOptions holds the state for the Apps API server
 type AppsServerOptions struct {
-	RecommendedOptions *genericoptions.RecommendedOptions
+	RecommendedOptions       *genericoptions.RecommendedOptions
+	ComponentGlobalsRegistry basecompatibility.ComponentGlobalsRegistry
 
 	StdOut io.Writer
 	StdErr io.Writer
@@ -66,6 +68,7 @@ func NewAppsServerOptions(out, errOut io.Writer) *AppsServerOptions {
 			"",
 			apiserver.Codecs.LegacyCodec(v1alpha1.SchemeGroupVersion),
 		),
+		ComponentGlobalsRegistry: compatibility.DefaultComponentGlobalsRegistry,
 
 		StdOut: out,
 		StdErr: errOut,
@@ -81,7 +84,7 @@ func NewCommandStartAppsServer(ctx context.Context, defaults *AppsServerOptions)
 		Short: "Launch an Apps API server",
 		Long:  "Launch an Apps API server",
 		PersistentPreRunE: func(*cobra.Command, []string) error {
-			return utilversionpkg.DefaultComponentGlobalsRegistry.Set()
+			return o.ComponentGlobalsRegistry.Set()
 		},
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := o.Complete(); err != nil {
@@ -111,8 +114,9 @@ func NewCommandStartAppsServer(ctx context.Context, defaults *AppsServerOptions)
 	defaultAppsVersion := "1.1"
 	// Register the "Apps" component in the global component registry,
 	// associating it with its effective version and feature gate configuration.
-	_, appsFeatureGate := utilversionpkg.DefaultComponentGlobalsRegistry.ComponentGlobalsOrRegister(
-		apiserver.AppsComponentName, utilversionpkg.NewEffectiveVersion(defaultAppsVersion),
+	_, appsFeatureGate := o.ComponentGlobalsRegistry.ComponentGlobalsOrRegister(
+		apiserver.AppsComponentName,
+		basecompatibility.NewEffectiveVersionFromString(defaultAppsVersion, "", ""),
 		featuregate.NewVersionedFeatureGate(version.MustParse(defaultAppsVersion)),
 	)
 
@@ -123,19 +127,19 @@ func NewCommandStartAppsServer(ctx context.Context, defaults *AppsServerOptions)
 	}))
 
 	// Register the standard kube component if it is not already registered in the global registry.
-	_, _ = utilversionpkg.DefaultComponentGlobalsRegistry.ComponentGlobalsOrRegister(
-		utilversionpkg.DefaultKubeComponent,
-		utilversionpkg.NewEffectiveVersion(baseversion.DefaultKubeBinaryVersion),
+	_, _ = o.ComponentGlobalsRegistry.ComponentGlobalsOrRegister(
+		basecompatibility.DefaultKubeComponent,
+		basecompatibility.NewEffectiveVersionFromString(baseversion.DefaultKubeBinaryVersion, "", ""),
 		utilfeature.DefaultMutableFeatureGate,
 	)
 
 	// Set the version emulation mapping from the "Apps" component to the kube component.
-	utilruntime.Must(utilversionpkg.DefaultComponentGlobalsRegistry.SetEmulationVersionMapping(
-		apiserver.AppsComponentName, utilversionpkg.DefaultKubeComponent, AppsVersionToKubeVersion,
+	utilruntime.Must(o.ComponentGlobalsRegistry.SetEmulationVersionMapping(
+		apiserver.AppsComponentName, basecompatibility.DefaultKubeComponent, AppsVersionToKubeVersion,
 	))
 
 	// Add flags from the global component registry.
-	utilversionpkg.DefaultComponentGlobalsRegistry.AddFlags(flags)
+	o.ComponentGlobalsRegistry.AddFlags(flags)
 
 	return cmd
 }
@@ -155,7 +159,7 @@ func (o *AppsServerOptions) Complete() error {
 func (o AppsServerOptions) Validate(args []string) error {
 	var allErrors []error
 	allErrors = append(allErrors, o.RecommendedOptions.Validate()...)
-	allErrors = append(allErrors, utilversionpkg.DefaultComponentGlobalsRegistry.Validate()...)
+	allErrors = append(allErrors, o.ComponentGlobalsRegistry.Validate()...)
 	return utilerrors.NewAggregate(allErrors)
 }
 
@@ -288,12 +292,8 @@ func (o *AppsServerOptions) Config() (*apiserver.Config, error) {
 	serverConfig.OpenAPIV3Config.Info.Title = "Apps"
 	serverConfig.OpenAPIV3Config.Info.Version = "0.1"
 
-	serverConfig.FeatureGate = utilversionpkg.DefaultComponentGlobalsRegistry.FeatureGateFor(
-		utilversionpkg.DefaultKubeComponent,
-	)
-	serverConfig.EffectiveVersion = utilversionpkg.DefaultComponentGlobalsRegistry.EffectiveVersionFor(
-		apiserver.AppsComponentName,
-	)
+	serverConfig.FeatureGate = o.ComponentGlobalsRegistry.FeatureGateFor(basecompatibility.DefaultKubeComponent)
+	serverConfig.EffectiveVersion = o.ComponentGlobalsRegistry.EffectiveVersionFor(apiserver.AppsComponentName)
 
 	if err := o.RecommendedOptions.ApplyTo(serverConfig); err != nil {
 		return nil, err
@@ -331,7 +331,7 @@ func AppsVersionToKubeVersion(ver *version.Version) *version.Version {
 	if ver.Major() != 1 {
 		return nil
 	}
-	kubeVer := utilversionpkg.DefaultKubeEffectiveVersion().BinaryVersion()
+	kubeVer := compatibility.DefaultKubeEffectiveVersionForTest().BinaryVersion()
 	// "1.2" corresponds to kubeVer
 	offset := int(ver.Minor()) - 2
 	mappedVer := kubeVer.OffsetMinor(offset)
