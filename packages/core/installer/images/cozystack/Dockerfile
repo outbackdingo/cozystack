@@ -1,4 +1,4 @@
-FROM golang:alpine3.21 as k8s-await-election-builder
+FROM golang:1.24-alpine as k8s-await-election-builder
 
 ARG K8S_AWAIT_ELECTION_GITREPO=https://github.com/LINBIT/k8s-await-election
 ARG K8S_AWAIT_ELECTION_VERSION=0.4.1
@@ -13,7 +13,7 @@ RUN git clone ${K8S_AWAIT_ELECTION_GITREPO} /usr/local/go/k8s-await-election/ \
  && make \
  && mv ./out/k8s-await-election-${TARGETARCH} /k8s-await-election
 
-FROM golang:alpine3.21 as builder
+FROM golang:1.24-alpine as builder
 
 RUN apk add --no-cache make git
 RUN apk add helm --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community
@@ -26,7 +26,7 @@ RUN go build -o /cozystack-assets-server -ldflags '-extldflags "-static" -w -s' 
 # Check that versions_map is not changed
 RUN make repos
 
-FROM alpine:3.21
+FROM alpine:3.22
 
 RUN apk add --no-cache make
 RUN apk add helm kubectl --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community
