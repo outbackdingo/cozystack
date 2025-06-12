@@ -261,18 +261,39 @@ func renderManifests(cfg *helmaction.Configuration, hr *v2.HelmRelease, chartDir
 
 // upgradeRelease runs a Helm upgrade (installing if necessary).
 func upgradeRelease(cfg *helmaction.Configuration, hr *v2.HelmRelease, chartDir string, vals map[string]interface{}) error {
-	up := helmaction.NewUpgrade(cfg)
-	up.Namespace = hr.Namespace
-	up.Install = true
-	if !plain {
-		up.PostRenderer = &fluxPostRenderer{name: hr.Name, ns: hr.Namespace}
-	}
+	relName := hr.Name
+	namespace := hr.Namespace
+
+	hist := helmaction.NewHistory(cfg)
+	hist.Max = 1
+	_, err := hist.Run(relName)
+
+	isNotFound := err != nil && strings.Contains(err.Error(), "release: not found")
 
 	ch, err := loader.Load(chartDir)
 	if err != nil {
 		return err
 	}
-	_, err = up.Run(hr.Name, ch, vals)
+
+	if isNotFound {
+		inst := helmaction.NewInstall(cfg)
+		inst.Namespace = namespace
+		inst.ReleaseName = relName
+		if !plain {
+			inst.PostRenderer = &fluxPostRenderer{name: relName, ns: namespace}
+		}
+		_, err = inst.Run(ch, vals)
+		return err
+	}
+
+	up := helmaction.NewUpgrade(cfg)
+	up.Namespace = namespace
+	up.Install = true // informative only
+	if !plain {
+		up.PostRenderer = &fluxPostRenderer{name: relName, ns: namespace}
+	}
+
+	_, err = up.Run(relName, ch, vals)
 	return err
 }
 
@@ -453,8 +474,10 @@ func cmdShow() *cobra.Command {
 // cmdApply returns the `cozypkg apply` command.
 func cmdApply() *cobra.Command {
 	var autoResume bool
-
 	cmd := cmdFactory("apply", func(cfg *helmaction.Configuration, hr *v2.HelmRelease, chartDir string) error {
+		if plain && autoResume {
+			return fmt.Errorf("--resume may not be used with --plain")
+		}
 		ctx := context.Background()
 
 		rc, _ := restConfig()
@@ -463,31 +486,39 @@ func cmdApply() *cobra.Command {
 		bc := record.NewBroadcaster()
 		defer bc.Shutdown()
 		rec := bc.NewRecorder(clientsetscheme.Scheme, corev1.EventSource{Component: "cozypkg"})
+		vals := map[string]interface{}{}
 
-		// Suspend before touching Helm.
-		if err := patchSuspend(ctx, cl, hr.Namespace, hr.Name, pointer.Bool(true)); err != nil {
-			return err
+		if !plain {
+			// Suspend before touching Helm.
+			if err := patchSuspend(ctx, cl, hr.Namespace, hr.Name, pointer.Bool(true)); err != nil {
+				return err
+			}
+			fmt.Fprintf(os.Stderr, "HelmRelease %s/%s suspended\n", hr.Namespace, hr.Name)
+			// Merge values from the HelmRelease.
+			var err error
+			vals, err = mergedValues(hr, chartDir)
+			if err != nil {
+				return err
+			}
 		}
-		fmt.Fprintf(os.Stderr, "HelmRelease %s/%s suspended\n", hr.Namespace, hr.Name)
 
-		vals, err := mergedValues(hr, chartDir)
-		if err != nil {
-			return err
-		}
 		if add, err := loadExtraValues(); err != nil {
 			return err
 		} else if err := mergo.Merge(&vals, add, mergo.WithOverride); err != nil {
 			return err
 		}
 
-		cfgDigest := fluxchartutil.DigestValues(digest.Canonical, vals).String()
-		chartVer := hr.Spec.Chart.Spec.Version
+		var chartVer, cfgDigest string
+		if !plain {
+			cfgDigest := fluxchartutil.DigestValues(digest.Canonical, vals).String()
+			chartVer := hr.Spec.Chart.Spec.Version
 
-		hr.Status.LastAttemptedGeneration = hr.Generation
-		hr.Status.LastAttemptedRevision = chartVer
-		hr.Status.LastAttemptedConfigDigest = cfgDigest
-		hr.Status.LastAttemptedReleaseAction = v2.ReleaseActionUpgrade
-		_ = cl.Status().Update(ctx, hr)
+			hr.Status.LastAttemptedGeneration = hr.Generation
+			hr.Status.LastAttemptedRevision = chartVer
+			hr.Status.LastAttemptedConfigDigest = cfgDigest
+			hr.Status.LastAttemptedReleaseAction = v2.ReleaseActionUpgrade
+			_ = cl.Status().Update(ctx, hr)
+		}
 
 		if err := upgradeRelease(cfg, hr, chartDir, vals); err != nil {
 			markFailure(ctx, cl, nil, hr, err)
@@ -500,7 +531,9 @@ func cmdApply() *cobra.Command {
 			}
 		}
 
-		markSuccess(ctx, cl, rec, hr, chartVer, cfgDigest)
+		if !plain {
+			markSuccess(ctx, cl, rec, hr, chartVer, cfgDigest)
+		}
 		return nil
 	})
 
