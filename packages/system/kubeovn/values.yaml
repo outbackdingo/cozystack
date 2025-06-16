@@ -58,7 +58,6 @@ kube-ovn:
     limits:
       cpu: "200m"
       memory: "200Mi"
-
 global:
   registry:
     address: ghcr.io/cozystack/cozystack
