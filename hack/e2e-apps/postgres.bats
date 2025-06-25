@@ -3,7 +3,7 @@
 @test "Create DB PostgreSQL" {
   name='test'
   kubectl -n tenant-test get postgreses.apps.cozystack.io $name || 
-  kubectl create -f - <<EOF
+  kubectl apply -f - <<EOF
 apiVersion: apps.cozystack.io/v1alpha1
 kind: Postgres
 metadata:
