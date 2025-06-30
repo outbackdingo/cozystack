@@ -106,6 +106,8 @@ See the reference for components utilized in this service:
 | `addons.monitoringAgents.enabled`             | Enable monitoring agents (Fluent Bit and VMAgents) to send logs and metrics. If tenant monitoring is enabled, data is sent to tenant storage; otherwise, it goes to root storage. | `false` |
 | `addons.monitoringAgents.valuesOverride`      | Custom values to override                                                                                                                                                         | `{}`    |
 | `addons.verticalPodAutoscaler.valuesOverride` | Custom values to override                                                                                                                                                         | `{}`    |
+| `addons.velero.enabled`                       | Enable velero for backup and restore k8s cluster.                                                                                                                                 | `false` |
+| `addons.velero.valuesOverride`                | Custom values to override                                                                                                                                                         | `{}`    |
 
 ### Kubernetes Control Plane Configuration
 

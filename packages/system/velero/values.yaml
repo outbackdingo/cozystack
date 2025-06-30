@@ -1,0 +1,4 @@
+velero:
+  configuration:
+    backupStorageLocation: null
+    volumeSnapshotLocation: null
