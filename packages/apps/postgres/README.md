@@ -15,27 +15,8 @@ This managed service is controlled by the CloudNativePG operator, ensuring effic
 
 ### How to switch primary/secondary replica
 
-See:
+See the CloudNativePG docs, [Rolling Updates, section Manual Updates](https://cloudnative-pg.io/documentation/1.15/rolling_update/#manual-updates-supervised).
 
-- <https://cloudnative-pg.io/documentation/1.15/rolling_update/#manual-updates-supervised>
-
-### How to restore backup
-
-find snapshot:
-
-```bash
-restic -r s3:s3.example.org/postgres-backups/database_name snapshots
-```
-
-restore:
-
-```bash
-restic -r s3:s3.example.org/postgres-backups/database_name restore latest --target /tmp/
-```
-
-more details:
-
-- <https://blog.aenix.io/restic-effective-backup-from-stdin-4bc1e8f083c1>
 
 ## Parameters
 
