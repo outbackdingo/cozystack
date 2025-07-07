@@ -57,3 +57,6 @@ generate:
 
 upload_assets: manifests
 	hack/upload-assets.sh
+
+controller-gen:
+	controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./internal/controller/" paths="./api/v1alpha1/"
